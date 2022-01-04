@@ -362,7 +362,10 @@ aerial8 = read.csv("Aerial data Expt 8_JA_1.2022.csv", header=T)
 aerial7 = read.csv("rep 7 aerial.csv", header=T)
 
 #1*clus1+10*clus10+100*clus100+1000*clus1000, then sum and log+1
-#spore counts for rep 8 arrived at following this 
+#spore counts for rep 8 arrived at following this ^
+
+aerial8$spores = aerial8$clus1 + 10*aerial8$clus10 + 100*aerial8$clus100 + 1000*aerial8$clus1000
+
 aerial8_sub = aerial8[,c('plot', 'spacing', 'xx', 'type', 'spores')]
 aerial8_sub$Experiment = c(8)
 
@@ -388,7 +391,7 @@ min(aerial$spores_per_source[aerial$spores_per_source != 0])
 
 aerial$Experiment = factor(aerial$Experiment, levels=c(7,8), labels=c("A","B"))
 
-write.csv(aerial, "aerial_spore_data_Rout.csv")
+write.csv(aerial, "aerial_spore_data_Rout.1.4.22.csv")
 
 #"fold over" the aerial data to measure distance from disease in either direction
 #take only the plates on the edge of the diseased -remove any D type that are not 6 or 8
