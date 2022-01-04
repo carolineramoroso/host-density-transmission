@@ -197,6 +197,53 @@ floral_sp_meandist = fl_sp_data %>% group_by(spacing, Rep, dist.from.dis, nsourc
 
 floral_sp_meandist$n_samples
 
+######## NEW 4 Jan 2021 ***********
+#first use the entire dataset
+
+#make spacing an ordered factor
+floral_sp_meandist$spacing_f = ordered(floral_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+floral_sp_meandist$o.spacing = ordered(floral_sp_meandist$spacing_f, levels=c(2,1,0.5,0.33,0.2))
+
+floral_sp_meandist$log10mean_spores1=log10(floral_sp_meandist$mean_spores+1)
+
+#### REPLACE TABLE 1 WITH THIS #### **************
+#generalized additive model indicating that the relationship between 
+#distance from the source of spores (in meters) and the number of spores deposited 
+#on flowers is mediated by plant density.
+fl_gam_entire = gam(log10mean_spores1~ s(dist.from.dis, by=o.spacing, k=5) + dist.from.dis + spacing_f + Rep, data=floral_sp_meandist, weights = n_samples, method="REML")
+summary(fl_gam_entire)
+gam.check(fl_gam_entire)
+anova(fl_gam_entire)
+
+
+#### REPLACE FIGURE 3 - a WITH THIS #### **************
+#Mean and standard error of the number of floral spores deposited on target plants by 
+#vectors (pollinators) (a) 
+
+fl_gam_entire = gam(log10mean_spores1~ s(dist.from.dis, by=o.spacing, k=5) + dist.from.dis + o.spacing + Rep, data=floral_sp_meandist, weights = n_samples, method="REML")
+summary(fl_gam_entire)
+
+plot_smooths(model = fl_gam_entire, series = dist.from.dis, comparison = Rep, facet_terms = spacing) + 
+  #all mean points in "shadow"
+  geom_errorbar(data= floral_sp_meandist,
+                aes(col=Rep, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
+  geom_point(data= floral_sp_meandist, size=2.5,
+             aes(x=dist.from.dis, y= log10mean_spores1, shape=Rep,fill=Rep)) +
+  facet_wrap(~factor(o.spacing,labels=c("Spacing=2m","Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
+             nrow=1)+
+  scale_shape_manual(values=c(21,23),name="Replicate", labels=c("A", "B")) +
+  scale_color_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
+  scale_fill_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
+  scale_linetype_manual(values=c("solid","dashed"), name="Replicate", labels=c("A", "B")) +
+  theme_bw() + ylab("Log10(Mean spores + 1)") + xlab("Distance from nearest diseased plant (m)")
+
+
+### OLD as of 4 Jan 2021### *** can remove if we go with full dataset analysis
+
+### now consider that the denser plots have larger sample sizes, and it might just be 
+### easier to pick up a curvy shape when there is a higher density of points along the
+### x-axis. to adjust:
+
 #subset the more sampled spacing arrays 
 #take the closest point, and then the closest points to 2m, 4m, and 6m 
 
@@ -309,6 +356,47 @@ aerial_sp_meandist = aerial %>% group_by(spacing, Experiment, dist.from.dis, typ
 aerial_sp_meandist$n_samples
 
 plot(dist.from.dis~spacing, data = aerial_sp_meandist)
+
+
+#### NEW as of 4 Jan 2022 ####### ******
+#########REPLACE TABLE 2 WITH THIS ####### ****
+# analysis with the full data set 
+
+
+aerial_sp_meandist$spacing_f = factor(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+aerial_sp_meandist$o.spacing = ordered(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+
+#non-ordered factor for spacing for interpretation
+aerialmeans_gam_log_wt = gam(log10mean_spores1~s(dist.from.dis, by= o.spacing, k=3) + dist.from.dis + Experiment + spacing_f, 
+                             data=aerial_sp_meandist, method="REML", weights=n_samples)
+gam.check(aerialmeans_gam_log_wt)
+summary(aerialmeans_gam_log_wt)
+anova(aerialmeans_gam_log_wt)
+
+aerial_sp_meandist$Experiment = factor(aerial_sp_meandist$Experiment)
+aer_subset_mean$Experiment = factor(aer_subset_mean$Experiment)
+
+# ordered spacing factor for plotting 
+aerialmeans_gam_log_wt = gam(log10mean_spores1~s(dist.from.dis, by= o.spacing, k=3) + dist.from.dis + Experiment + o.spacing, 
+                             data=aerial_sp_meandist, method="REML", weights=n_samples)
+aerial_sp_meandist$o.spacing = ordered(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+
+# means with errorbars - with shadow points
+plot_smooths(model = aerialmeans_gam_log_wt, series = dist.from.dis, comparison = Experiment, facet_terms = o.spacing) + 
+  geom_errorbar(data= aerial_sp_meandist, width=0,
+                aes(col=Experiment, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
+  geom_point(data= aerial_sp_meandist, size=2.5, col="black",
+             aes(x=dist.from.dis, y= log10(mean_spores+1), shape=Experiment, fill=Experiment)) +
+  facet_wrap(~ factor(o.spacing,labels=c("Spacing=2m","Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
+             nrow=1) +
+  scale_shape_manual(values=c(21,23),name="Replicate", labels=c("A", "B")) +
+  scale_fill_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
+  scale_color_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
+  scale_linetype_manual(values=c("solid","dashed"), name="Replicate", labels=c("A", "B")) + 
+  theme_bw() + ylab("Log10(Mean spores + 1)") + xlab("Distance from nearest diseased plant (m)")
+
+
+
 
 #subset the more sampled spacing arrays 
 #take the closest point, and then the closest points to 2m, 4m, and 6m 
