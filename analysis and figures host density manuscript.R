@@ -352,7 +352,7 @@ ggplot(data=aerial2, aes(x=xx, y=log10(spores+1))) +
 #mean spores at each distance
 aerial_sp_meandist = aerial %>% group_by(spacing, Experiment, dist.from.dis, type, nsources) %>%
   summarize(mean_spores = mean(spores), sterrlog = std.error(log10(spores+1)), n_samples = length(spores))
-
+View(aerial_sp_meandist)
 aerial_sp_meandist$n_samples
 
 plot(dist.from.dis~spacing, data = aerial_sp_meandist)
@@ -362,9 +362,10 @@ plot(dist.from.dis~spacing, data = aerial_sp_meandist)
 #########REPLACE TABLE 2 WITH THIS ####### ****
 # analysis with the full data set 
 
-
 aerial_sp_meandist$spacing_f = factor(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
 aerial_sp_meandist$o.spacing = ordered(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+
+aerial_sp_meandist$log10mean_spores1 = log10(aerial_sp_meandist$mean_spores+1)
 
 #non-ordered factor for spacing for interpretation
 aerialmeans_gam_log_wt = gam(log10mean_spores1~s(dist.from.dis, by= o.spacing, k=3) + dist.from.dis + Experiment + spacing_f, 
