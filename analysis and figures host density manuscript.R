@@ -352,7 +352,7 @@ ggplot(data=aerial2, aes(x=xx, y=log10(spores+1))) +
 #mean spores at each distance
 aerial_sp_meandist = aerial %>% group_by(spacing, Experiment, dist.from.dis, type, nsources) %>%
   summarize(mean_spores = mean(spores), sterrlog = std.error(log10(spores+1)), n_samples = length(spores))
-View(aerial_sp_meandist)
+#View(aerial_sp_meandist)
 aerial_sp_meandist$n_samples
 
 plot(dist.from.dis~spacing, data = aerial_sp_meandist)
@@ -406,6 +406,7 @@ aer_subset_mean= aerial_sp_meandist[aerial_sp_meandist$dist.from.dis==0.00 |
                                       aerial_sp_meandist$dist.from.dis==2.00 
                                     ,]
 plot(dist.from.dis~spacing, data = aer_subset_mean)
+View(aer_subset_mean)
 
 aer_subset_mean$spacing_f = factor(aer_subset_mean$spacing, levels=c(2,1,0.5,0.33,0.2))
 aer_subset_mean$o.spacing = ordered(aer_subset_mean$spacing, levels=c(2,1,0.5,0.33,0.2))
@@ -526,12 +527,15 @@ cont_spores$o.spacing = ordered(cont_spores$spacing_f, levels=c(4,1,0.5,0.33))
 #### TABLE S9 ####
 #Generalized additive model of mean spores deposited at a subset of 
 #locations in the absence of diseased source plants 
-
-cont_gam1 = gam(log10(mean_spores+1)~ s(dist.from.dis, by=o.spacing, k=3)  + spacing_f, 
+#
+cont_gam1 = gam(log10(mean_spores+1)~ s(dist.from.dis, by=o.spacing, k=3)  + o.spacing, 
                 data=subs_cont_spores_meanpos, weights = n_samples, method="REML")
 summary(cont_gam1)
 gam.check(cont_gam1)
 anova(cont_gam1)
+#drop the interaction 
+#leave distance out, and just run an anova with distance and spacing#
+
   
 #### Figure S6 ####
 #Floral spore deposition in the absence of diseased source plants. 
