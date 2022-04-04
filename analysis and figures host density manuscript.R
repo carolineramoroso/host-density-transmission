@@ -14,6 +14,9 @@ setwd("~/Git/Host density shapes transmission mode/host denisty data")
 
 #####***POLLINATOR VISITATION***#####
 poll_data = read.csv("pollinator_primary_visits.csv", header=T)
+
+poll_data %>% group_by(Replicate) %>% summarize(tot_prim_vis = sum(Total), tot_tubes = sum(Tubes), tot_hrs = sum(Obs_duration)/60)
+
 poll_data$Disease_status = factor(poll_data$Disease_status)
 poll_data$Replicate = factor(poll_data$Replicate)
 
@@ -67,11 +70,11 @@ poll_data$Houseflies_pt = poll_data$Houseflies/poll_data$Tubes
 #subset just the most abundant pollinator types for analysis - Rep B only 
 poll_data_sub = poll_data %>% subset(Replicate == "B") %>%
   select(c(Spacing, Disease_status, Butterflies_pt, Bees_pt, Hoverflies_pt, Houseflies_pt))
-colnames(poll_data_sub)[3:6] = c("Butterflies", "Bees","Hoverflies","Houseflies")
+colnames(poll_data_sub)[3:6] = c("Butterflies", "Bees","Hoverflies","Flies")
 
 #rearrange columns to rows
-poll_data_sub_gat = poll_data_sub %>% gather(Butterflies:Houseflies, key="Pollinator", value="Visits_per_tube")
-poll_data_sub_gat$Pollinator = factor(poll_data_sub_gat$Pollinator, levels=c("Houseflies","Butterflies","Hoverflies","Bees"))
+poll_data_sub_gat = poll_data_sub %>% gather(Butterflies:Flies, key="Pollinator", value="Visits_per_tube")
+poll_data_sub_gat$Pollinator = factor(poll_data_sub_gat$Pollinator, levels=c("Flies","Butterflies","Hoverflies","Bees"))
 
 #### TABLE S5 ####
 #Results from a generalized additive model of primary pollinator 
@@ -93,10 +96,11 @@ plot_smooths(model = polltypes_gam1, series = Spacing, comparison = Pollinator) 
   stat_summary(fun.data="mean_se", 
                aes(x=Spacing, y=log10(Visits_per_tube+0.027), color=Pollinator), 
                alpha=0.7, data=poll_data_sub_gat, position= position_dodge(width=0.05))+
-  ylab("log10(Primary visits per plant+0.027)") + scale_x_reverse() +
+  ylab("Log10(Primary visits per plant+0.027)") + scale_x_reverse() +
+  xlab("Spacing (m)") +
   scale_color_manual(values=c("#4daf4a","#984ea3","#e41a1c","#377eb8")) + 
   scale_fill_manual(values=c("#4daf4a","#984ea3","#e41a1c","#377eb8")) +
-  scale_linetype_manual(values=c(1,1,1,1))
+  scale_linetype_manual(values=c(1,1,1,1)) + theme_bw()
 
 
 #### Secondary pollinator visitations ####
@@ -330,7 +334,7 @@ aerial$dist.from.dis[aerial$type=="E"] = aerial$xx[aerial$type=="E"]-8
 
 aerial$type = factor(aerial$type, levels=c("E","H","D"))
 
-
+View(aerial2)
 #### TABLE S7 ####
 #Aerial spore deposition at each X position, with no difference 
 #detected between aerial spore traps that were placed among healthy 
@@ -346,8 +350,7 @@ ggplot(data=aerial2, aes(x=xx, y=log10(spores+1))) +
   stat_summary(aes(col=type), fun.data = "mean_se") + xlab("X position (m)") + ylab("Log10(Mean spore count+1)") +
   facet_wrap(~factor(spacing, levels=c(2,1,0.5,0.33,0.2), 
                      labels=c("Spacing=2m", "Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")), nrow=1) +
-  scale_color_manual(values=c("black","#78c679","#fa9fb5"), labels=c("Diseased","Empty","Healthy"), name="Surrounding Flowers")
-
+  scale_color_manual(values=c("black","#78c679","#f768a1"), labels=c("Diseased","None","Healthy"), name="Surrounding Flowers")
 
 #mean spores at each distance
 aerial_sp_meandist = aerial %>% group_by(spacing, Experiment, dist.from.dis, type, nsources) %>%
@@ -465,9 +468,7 @@ fl_subset_mean2 = fl_subset_mean[,c(1:5,7)]
 aer_subset_mean2 = aer_subset_mean %>% group_by(spacing, Experiment, dist.from.dis, nsources) %>%
   summarize(mean_spores = mean(mean_spores), n_samples=sum(n_samples))
 
-aer_subset_mean2$Rep=NA
-aer_subset_mean2$Rep[aer_subset_mean2$Experiment=="7"] = "A"  
-aer_subset_mean2$Rep[aer_subset_mean2$Experiment=="8"] = "B" 
+aer_subset_mean2$Rep=aer_subset_mean2$Experiment
 fl_subset_mean2$trans_mode = "Floral"
 aer_subset_mean2$trans_mode = "Aerial"
 
@@ -482,12 +483,12 @@ both_types_subset_2m = both_types_subset %>% filter(dist.from.dis==2 | dist.from
 
 both_types_subset_2m$o.Rep = ordered(both_types_subset_2m$Rep)
 
-#### TABLE S8 ####
+#### TABLE S11 now ####
 nsrc_gam =gam(log10(mean_spores+1) ~ s(nsources, by=o.trans_mode, k=5) + s(nsources, by=Rep, k=5) + trans_mode + Rep, data=both_types_subset_2m, weights = n_samples, method="REML")
 summary(nsrc_gam)
 anova(nsrc_gam)
 
- #### FIGURE 4 ####
+ #### FIGURE 5 now ####
 #The rate of spore deposition on each floral or aerial target as it varies 
 #with the number of source plants at different densities. Each point represents 
 #the mean spore deposition on targets at 2m distance from the source of disease.
@@ -503,7 +504,8 @@ plot_smooths(model = nsrc_gam, series = nsources, comparison = trans_mode, facet
   ylab("Log10(Mean spore count + 1)") + 
   scale_color_manual(values=c("#4d9221","#c51b7d"), name="Transmission", labels=c("Aerial", "Floral")) +
   scale_fill_manual(values=c("#4d9221","#c51b7d"), name="Transmission", labels=c("Aerial", "Floral"))  +
-  scale_linetype_manual(values=c("solid","dashed"), name="Transmission", labels=c("Aerial", "Floral")) 
+  scale_linetype_manual(values=c("solid","dashed"), name="Transmission", labels=c("Aerial", "Floral")) +
+  theme_bw()
 
 
 #### Control plots ####
@@ -519,6 +521,15 @@ subs_cont_spores_meanpos=cont_spores_meanpos
 subs_cont_spores_meanpos$spacing_f = factor(subs_cont_spores_meanpos$spacing, levels=c(4,1,0.5,0.33))
 subs_cont_spores_meanpos$o.spacing = ordered(subs_cont_spores_meanpos$spacing_f, levels=c(4,1,0.5,0.33))
 
+hist(cont_spores$spores_mm2_new, xlim=c(0,200), breaks=50)
+max(cont_spores$spores_mm2_new)
+cont_spores[cont_spores$spores_mm2_new>50,]
+mean(log10(cont_spores$spores_mm2_new[cont_spores$spacing==4]+1))
+mean(cont_spores$spores_mm2_new[cont_spores$spacing==4])
+std.error(cont_spores$spores_mm2_new[cont_spores$spacing==4])
+
+mean(cont_spores$spores_mm2_new[cont_spores$spacing==0.33])
+std.error(cont_spores$spores_mm2_new[cont_spores$spacing==0.33])
 
 cont_spores$spacing_f = factor(cont_spores$spacing, levels=c(4,1,0.5,0.33))
 cont_spores$o.spacing = ordered(cont_spores$spacing_f, levels=c(4,1,0.5,0.33))
@@ -535,7 +546,14 @@ gam.check(cont_gam1)
 anova(cont_gam1)
 #drop the interaction 
 #leave distance out, and just run an anova with distance and spacing#
+cont_gam2 = gam(log10(mean_spores+1)~ spacing, 
+                data=subs_cont_spores_meanpos, weights = n_samples, method="REML")
+summary(cont_gam2)
 
+cont_lm = lm(log10(mean_spores+1)~ spacing, 
+   data=subs_cont_spores_meanpos)
+summary(cont_lm)
+Anova(cont_lm)
   
 #### Figure S6 ####
 #Floral spore deposition in the absence of diseased source plants. 
