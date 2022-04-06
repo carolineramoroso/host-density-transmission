@@ -1,4 +1,4 @@
-# 
+# load packages
 library(ggplot2)
 library(mgcv)
 library(lmtest)
@@ -7,6 +7,7 @@ library(tidyr)
 library(car)
 library(tidymv) 
 library(plotrix)
+library(sjmisc)
 
 theme_set(theme_bw())
 
@@ -357,20 +358,20 @@ plot_smooths(model = fl_gam1, series = dist.from.dis, comparison = Rep, facet_te
 
 ### BEGIN DATA CLEANING STEPS ###
 
+#setwd("~/Documents/Google Drive/FILES/H-M/Host Density Transmission")
 aerial8 = read.csv("Aerial data Expt 8_JA_1.2022.csv", header=T)
-aerial7 = read.csv("rep 7 aerial.csv", header=T)
+aerial7 = read.csv("rep 7 strips - clumps.csv", header=T)
 
 #1*clus1+10*clus10+100*clus100+1000*clus1000, then sum and log+1
 #spore counts for rep 8 arrived at following this ^
 
 aerial8$spores = aerial8$clus1 + 10*aerial8$clus10 + 100*aerial8$clus100 + 1000*aerial8$clus1000
+aerial7$spores = aerial7$clus1 + 10*aerial7$clus10 + 100*aerial7$clus100 + 1000*aerial7$clus1000
 
-=======
-#spore counts for rep 8 arrived at following this 
 aerial8_sub = aerial8[,c('plot', 'spacing', 'xx', 'type', 'spores')]
 aerial8_sub$Experiment = c(8)
 
-aerial7_sub = aerial7[,c('plot', 'spacing', 'xx', 'type', 'total_spores')]
+aerial7_sub = aerial7[,c('plot', 'spacing', 'xx', 'type', 'spores')]
 colnames(aerial7_sub) = c('plot', 'spacing', 'xx', 'type', 'spores')
 aerial7_sub$Experiment = c(7)
 unique(aerial7_sub$spacing)
@@ -391,19 +392,17 @@ aerial$spores_per_source = aerial$spores / aerial$nsources
 min(aerial$spores_per_source[aerial$spores_per_source != 0]) 
 
 aerial$Experiment = factor(aerial$Experiment, levels=c(7,8), labels=c("A","B"))
+#write.csv(aerial, "aerial_spore_data_4.6.22.csv")
 
-<<<<<<< HEAD
-write.csv(aerial, "aerial_spore_data_Rout.1.4.22.csv")
-=======
-write.csv(aerial, "aerial_spore_data_Rout.csv")
->>>>>>> 9d2d99799a96b7195af049054366c2e7b93a7c48
-
+#in host density data folder
+#aerial = read.csv("aerial_spore_data.csv")
+#View(aerial)
 #"fold over" the aerial data to measure distance from disease in either direction
 #take only the plates on the edge of the diseased -remove any D type that are not 6 or 8
 plot(xx~spacing, aerial[aerial$type=="D",])
-aerialnoD = aerial[aerial$type!="D",]
-aerialDonly = aerial[aerial$type=="D",]
-aerialDonly68 = aerialDonly[aerialDonly$xx==6 | aerialDonly$xx==8,]
+#aerialnoD = aerial[aerial$type!="D",]
+#aerialDonly = aerial[aerial$type=="D",]
+#aerialDonly68 = aerialDonly[aerialDonly$xx==6 | aerialDonly$xx==8,]
 
 aerial = rbind(aerialnoD, aerialDonly68)
 
@@ -413,7 +412,10 @@ aerial$dist.from.dis[aerial$type=="D"] = 0
 aerial$dist.from.dis[aerial$type=="H"] = 6-aerial$xx[aerial$type=="H"]
 aerial$dist.from.dis[aerial$type=="E"] = aerial$xx[aerial$type=="E"]-8
 
-aerial$dist.from.dis
+aerial$dist.from.center = NA
+aerial$dist.from.center[aerial$type=="H"] = 7-aerial$xx[aerial$type=="H"]
+aerial$dist.from.center[aerial$type=="E"] = aerial$xx[aerial$type=="E"]-7
+
 
 
 plot(dist.from.dis~xx, aerial) #check
@@ -516,6 +518,129 @@ plot_smooths(model = aerialmeans_gam_log_wt, series = dist.from.dis, comparison 
   scale_color_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
   scale_linetype_manual(values=c("solid","dashed"), name="Replicate", labels=c("A", "B")) + 
   theme_bw() + ylab("Log10(Mean spores + 1)") + xlab("Distance from nearest diseased plant (m)")
+
+
+#new analyses 4 april
+repA_clumps = aerial7 %>% group_by(type) %>% 
+  summarize(Clumps10 = sum(clus1,clus10), Clumps100 = sum(clus100), Clumps1000 = sum(clus1000))
+colnames(repA_clumps) = NULL
+
+A.D = repA_clumps[1,2:4]
+A.E = repA_clumps[2,2:4]
+A.H = repA_clumps[3,2:4]
+nums = paste(c(A.D,A.E,A.H))
+nums= as.numeric(nums)
+dat.A= matrix(nums, nrow=3, ncol=3)
+
+str(dat)
+dat = matrix(c(30,11,3,13,1,0), nrow=3, ncol=2)
+
+chisq.test(x=dat)
+
+
+repB_clumps = aerial8 %>% group_by(type) %>% 
+  summarize(Clumps10 = sum(clus1,clus10), Clumps100 = sum(clus100), Clumps1000 = sum(clus1000))
+colnames(repB_clumps) = NULL
+
+B.D = repB_clumps[1,2:4]
+B.E = repB_clumps[2,2:4]
+B.H = repB_clumps[3,2:4]
+nums = paste(c(B.D,B.E,B.H))
+nums= as.numeric(nums)
+dat.B= matrix(nums, nrow=3, ncol=3)
+
+dat.both = dat.A + dat.B
+
+chisq.test(dat.both) # combined? 
+
+aerialA = subset(aerial, type!="D" & Experiment=="A")
+aerialB = subset(aerial, type!="D" & Experiment=="B")
+
+plot(log10(spores+1)~xx, data=aerial)
+
+
+#Table S8
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.center) + type,  
+         data=aerialA))
+
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.center) + type,  
+         data=aerialB))
+
+#Table S9 - area within the diseased sources? 
+
+aerialDonly$dist.from.center = abs(7-aerialDonly$xx)
+plot(dist.from.center~xx, data=aerialDonly)
+aerialDonlyA = subset(aerialDonly, Experiment=="A")
+aerialDonlyB = subset(aerialDonly, Experiment=="B")
+
+#can't replicate the experiment A stuff - maybe some outliers removed?
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialDonlyA))
+
+anova(lm(log10(spores+1)~ dist.from.center,  
+           data=aerialDonlyA))
+
+Anova(lm(log10(spores+1)~ nsources*dist.from.center,  
+           data=aerialDonlyA), type="III")
+
+summary(lm(log10(spores+1)~ nsources*spacing*dist.from.center,  
+           data=aerialDonlyA), type="III")
+
+#B - seems consistent!
+anova(lm(log10(spores+1)~ spacing,  
+         data=aerialDonlyB))
+
+anova(lm(log10(spores+1)~ dist.from.center,  
+         data=aerialDonlyB))
+
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialDonlyB))
+
+#### until this part
+
+Anova(lm(log10(spores+1)~ nsources + dist.from.center,  
+         data=aerialDonlyB), type="III")
+
+#this one not consistent
+Anova(lm(log10(spores+1)~ nsources*dist.from.center,  
+           data=subset(aerialDonlyB, spacing !=2)), type="III")
+
+
+
+#Table S10 
+#A - can't replicate
+anova(lm(log10(spores+1)~ spacing,  
+         data=aerialA))
+
+anova(lm(log10(spores+1)~ dist.from.center,  
+         data=aerialA))
+
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialA))
+
+Anova(lm(log10(spores+1)~ nsources+dist.from.center,  
+         data=aerialA), type="III")
+
+Anova(lm(log10(spores+1)~ nsources*dist.from.center,  
+         data=subset(aerialA, spacing !=2)), type="III")
+
+# B - close?
+anova(lm(log10(spores+1)~ spacing,  
+         data=aerialB))
+
+anova(lm(log10(spores+1)~ dist.from.center,  
+         data=aerialB))
+
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialB))
+
+Anova(lm(log10(spores+1)~ nsources+dist.from.center,  
+         data=aerialB), type="III")
+summary(lm(log10(spores+1)~ nsources+dist.from.center,  
+           data=aerialB))
+Anova(lm(log10(spores+1)~ nsources*dist.from.center,  
+         data=subset(aerialB, spacing !=2)), type="III")
+
 
 
 
