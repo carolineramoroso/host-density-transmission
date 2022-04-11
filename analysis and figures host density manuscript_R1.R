@@ -40,7 +40,7 @@ summary(pol_gam1)
 gam.check(pol_gam1)
 anova(pol_gam1)
 
-#### FIGURE S3 ####
+#### FIGURE S4 ####
 #Rate of primary visitation by all pollinator types per observed 
 #floral tube containing two Dianthus pavonius flowers that were either 
 #healthy or diseased and arranged at different densities.
@@ -131,7 +131,7 @@ gam.check(secvis_gam1)
 summary(secvis_gam1)
 anova(secvis_gam1)
 
-#### FIGURE S4 - a ####
+#### FIGURE S5 - a ####
 #Secondary pollinator visitations. Probability of secondary visit given a primary visit was 
 #calculated by dividing the secondary visitation rate per observed plant by the 
 #mean primary visitation rate per observed plant.
@@ -160,7 +160,7 @@ summary(secvis_gam2)
 anova(secvis_gam2)
 
 
-#### FIGURE S4 - b ####
+#### FIGURE S5 - b ####
 #Secondary pollinator visitations. 
 #corrected for the differences in the overall number of plants observed by 
 #dividing this probability by the mean number of plants observed at each density
@@ -201,7 +201,6 @@ floral_sp_meandist = fl_sp_data %>% group_by(spacing, Rep, dist.from.dis, nsourc
 
 floral_sp_meandist$n_samples
 
-######## NEW 4 Jan 2021 ***********
 #first use the entire dataset
 
 #make spacing an ordered factor
@@ -210,17 +209,17 @@ floral_sp_meandist$o.spacing = ordered(floral_sp_meandist$spacing_f, levels=c(2,
 
 floral_sp_meandist$log10mean_spores1=log10(floral_sp_meandist$mean_spores+1)
 
-#### REPLACE TABLE 1 WITH THIS #### **************
+#### TABLE 1A #### **************
 #generalized additive model indicating that the relationship between 
 #distance from the source of spores (in meters) and the number of spores deposited 
 #on flowers is mediated by plant density.
+
 fl_gam_entire = gam(log10mean_spores1~ s(dist.from.dis, by=o.spacing, k=5) + dist.from.dis + spacing_f + Rep, data=floral_sp_meandist, weights = n_samples, method="REML")
 summary(fl_gam_entire)
 gam.check(fl_gam_entire)
 anova(fl_gam_entire)
 
-
-#### REPLACE FIGURE 3 - a WITH THIS #### **************
+#### FIGURE 3 - a ####
 #Mean and standard error of the number of floral spores deposited on target plants by 
 #vectors (pollinators) (a) 
 
@@ -228,11 +227,10 @@ fl_gam_entire = gam(log10mean_spores1~ s(dist.from.dis, by=o.spacing, k=5) + dis
 summary(fl_gam_entire)
 
 plot_smooths(model = fl_gam_entire, series = dist.from.dis, comparison = Rep, facet_terms = spacing) + 
-  #all mean points in "shadow"
   geom_errorbar(data= floral_sp_meandist,
                 aes(col=Rep, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
   geom_point(data= floral_sp_meandist, size=2.5,
-             aes(x=dist.from.dis, y= log10mean_spores1, shape=Rep,fill=Rep)) +
+             aes(x=dist.from.dis, y= log10mean_spores1, shape=Rep,fill=Rep), col="gray40") +
   facet_wrap(~factor(o.spacing,labels=c("Spacing=2m","Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
              nrow=1)+
   scale_shape_manual(values=c(21,23),name="Replicate", labels=c("A", "B")) +
@@ -242,14 +240,12 @@ plot_smooths(model = fl_gam_entire, series = dist.from.dis, comparison = Rep, fa
   theme_bw() + ylab("Log10(Mean spores + 1)") + xlab("Distance from nearest diseased plant (m)")
 
 
-### OLD as of 4 Jan 2021### *** can remove if we go with full dataset analysis
-
 ### now consider that the denser plots have larger sample sizes, and it might just be 
-### easier to pick up a curvy shape when there is a higher density of points along the
+### easier to pick up a non-linear shape when there is a higher density of points sampled along the
 ### x-axis. to adjust:
-
 #subset the more sampled spacing arrays 
 #take the closest point, and then the closest points to 2m, 4m, and 6m 
+# (note, the results do not change, we are just being more conservative)
 
 fl_subset_mean= rbind(
   floral_sp_meandist[floral_sp_meandist$spacing==0.2 & (floral_sp_meandist$dist.from.dis==0.2|floral_sp_meandist$dist.from.dis==1.8|floral_sp_meandist$dist.from.dis==4.4|floral_sp_meandist$dist.from.dis==6),],
@@ -263,7 +259,6 @@ fl_subset_mean= rbind(
 )
 
 
-
 #make spacing an ordered factor
 fl_subset_mean$spacing_f = factor(fl_subset_mean$spacing, levels=c(2,1,0.5,0.33,0.2))
 fl_subset_mean$o.spacing = ordered(fl_subset_mean$spacing_f, levels=c(2,1,0.5,0.33,0.2))
@@ -274,7 +269,7 @@ fl_subset_mean$log10mean_spores1=log10(fl_subset_mean$mean_spores+1)
 floral_sp_meandist$log10mean_spores1=log10(floral_sp_meandist$mean_spores+1)
 
 
-#### TABLE 1 ####
+#### TABLE S7 ####
 #Results from a generalized additive model indicating that the relationship between 
 #distance from the source of spores (in meters) and the number of spores deposited 
 #on flowers is mediated by plant density.
@@ -285,43 +280,11 @@ gam.check(fl_gam1)
 anova(fl_gam1)
 
 
-#### FIGURE 3 - a ####
-#Mean and standard error of the number of floral spores deposited on target plants by 
-#vectors (pollinators) (a) 
-
-fl_gam1 = gam(log10mean_spores1~ s(dist.from.dis, by=o.spacing, k=5) + dist.from.dis + o.spacing + Rep, data=fl_subset_mean, weights = n_samples, method="REML")
-summary(fl_gam1)
-
-plot_smooths(model = fl_gam1, series = dist.from.dis, comparison = Rep, facet_terms = spacing) + 
-  #all mean points in "shadow"
-  geom_errorbar(data= floral_sp_meandist, alpha=0.6,
-               aes(col=Rep, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
-  geom_point(data= floral_sp_meandist, alpha=0.6, size=2.5,
-             aes(x=dist.from.dis, y= log10mean_spores1, shape=Rep,fill=Rep), col="gray40") +
-  #subset of mean points that were analyzed
-  geom_errorbar(data= fl_subset_mean, 
-                aes(col=Rep, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
-  geom_point(data= fl_subset_mean, alpha=1, size=2.5,
-             aes(x=dist.from.dis, y= log10mean_spores1, shape=Rep, fill=Rep), col="black") +
-  facet_wrap(~factor(o.spacing,labels=c("Spacing=2m","Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
-             nrow=1)+
-  scale_shape_manual(values=c(21,23),name="Replicate", labels=c("A", "B")) +
-  scale_color_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
-  scale_fill_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
-  scale_linetype_manual(values=c("solid","dashed"), name="Replicate", labels=c("A", "B")) +
-  theme_bw() + ylab("Log10(Mean spores + 1)") + xlab("Distance from nearest diseased plant (m)")
-
-
-
 
 #####***AERIAL SPORE DEPOSITION***#####
 aerial = read.csv("aerial_spore_data_4.6.22.csv", header=T)
-aerial2=aerial
 #"fold over" the aerial data to measure distance from disease in either direction
 #take only the plates on the edge of the diseased -remove any D type that are not 6 or 8
-plot(xx~spacing, aerial[aerial$type=="D",])
-#aerialDonly = aerial[aerial$type=="D",]
-#aerialDonly68 = aerialDonly[aerialDonly$xx==6 | aerialDonly$xx==8,]
 
 aerial
 aerial$dist.from.dis = NA
@@ -329,21 +292,104 @@ aerial$dist.from.dis[aerial$type=="D"] = 0
 aerial$dist.from.dis[aerial$type=="H"] = 6-aerial$xx[aerial$type=="H"]
 aerial$dist.from.dis[aerial$type=="E"] = aerial$xx[aerial$type=="E"]-8
 
-aerial$type = factor(aerial$type, levels=c("E","H","D"))
+aerial$type = factor(aerial$type, levels=c("D","E","H"))
 
-View(aerial2)
-#### TABLE S7 ####
-#Aerial spore deposition at each X position, with no difference 
-#detected between aerial spore traps that were placed among healthy 
+aerialA = subset(aerial, Experiment=="A")
+aerialB = subset(aerial, Experiment=="B")
+
+#### TABLE S8 ####
+#chi square test 
+
+repA_clumps = aerialA %>% group_by(type) %>% 
+  summarize(Clumps10 = sum(clus1,clus10), Clumps100.1000 = sum(clus100,clus1000))
+repA_clumps
+
+A.D = repA_clumps[1,2:3] #clumps under diseased plants
+A.E = repA_clumps[2,2:3] #clumps under no plants
+A.H = repA_clumps[3,2:3] #clumps under healthy plants
+
+A.nonD = A.H + A.E
+nums = paste(c(A.D,A.nonD))
+nums = as.numeric(nums)
+dat.A= matrix(nums, nrow=2, ncol=2)
+dat.A
+chisq.test(x=dat.A)
+
+
+repB_clumps = aerialB %>% group_by(type) %>% 
+  summarize(Clumps10 = sum(clus1,clus10), Clumps100.1000 = sum(clus100,clus1000))
+repB_clumps
+
+B.D = repB_clumps[1,2:3] #clumps under diseased plants
+B.E = repB_clumps[2,2:3] #clumps under no plants
+B.H = repB_clumps[3,2:3] #clumps under healthy plants
+
+B.nonD = B.H + B.E
+nums = paste(c(B.D,B.nonD))
+nums = as.numeric(nums)
+dat.B= matrix(nums, nrow=2, ncol=2)
+dat.B
+chisq.test(x=dat.B)
+
+
+###########
+#### TABLE S9 ####
+#no difference detected between aerial spore traps that were placed among healthy 
 #flowers and in empty space.  
-aerial$type.o = ordered(aerial$type)
-gam_aer.eh = gam(log10(spores+1)~ s(xx, by=type.o) + type + spacing, data=aerial[aerial$type!="D",])
-summary(gam_aer.eh) 
-anova(gam_aer.eh)
+aerialA_noD = subset(aerialA, type!="D")
+aerialB_noD = subset(aerialB, type!="D")
+aerial_noD = subset(aerial, type!="D")
 
-#### FIGURE S5 ####
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.dis) + type,  
+         data=aerialA_noD))
+
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.dis)*type,  
+         data=aerialA_noD))
+
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.dis) + type,  
+         data=aerialB_noD))
+
+anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.dis)*type,  
+         data=aerialB_noD))
+
+#table S9 - both experiments in one model, consistent results with analyzing separately
+anova(lm(log10(spores+1)~ factor(spacing) + Experiment + factor(dist.from.dis)  + type,  
+         data=aerial_noD))
+
+anova(lm(log10(spores+1)~ factor(spacing) + Experiment + factor(dist.from.dis)*type,  
+         data=aerial_noD))
+
+
+##################
+#### TABLE S10 ####
+
+aerialA_Donly = subset(aerialA, type=="D")
+aerialB_Donly = subset(aerialB, type=="D")
+aerial_Donly = subset(aerial, type=="D")
+
+anova(lm(log10(spores+1)~ spacing,  
+         data=aerialA_Donly))
+
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialA_Donly))
+
+anova(lm(log10(spores+1)~ spacing,  
+         data=aerialB_Donly))
+
+anova(lm(log10(spores+1)~ nsources,  
+         data=aerialB_Donly))
+
+# table s10 - both experiments combined, consistent with analyses separately
+anova(lm(log10(spores+1)~ spacing + Experiment,  
+         data=aerial_Donly))
+
+anova(lm(log10(spores+1)~ nsources + Experiment,  
+         data=aerial_Donly))
+
+
+#### FIGURE 4 ####
 #Mean aerial spore deposition at different X positions in the floral arrays.
-ggplot(data=aerial2, aes(x=xx, y=log10(spores+1))) + 
+ggplot(data=aerial, aes(x=xx, y=log10(spores+1))) + 
   stat_summary(aes(col=type), fun.data = "mean_se") + xlab("X position (m)") + ylab("Log10(Mean spore count+1)") +
   facet_wrap(~factor(spacing, levels=c(2,1,0.5,0.33,0.2), 
                      labels=c("Spacing=2m", "Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")), nrow=1) +
@@ -352,67 +398,40 @@ ggplot(data=aerial2, aes(x=xx, y=log10(spores+1))) +
 #mean spores at each distance
 aerial_sp_meandist = aerial %>% group_by(spacing, Experiment, dist.from.dis, type, nsources) %>%
   summarize(mean_spores = mean(spores), sterrlog = std.error(log10(spores+1)), n_samples = length(spores))
-#View(aerial_sp_meandist)
-aerial_sp_meandist$n_samples
 
-plot(dist.from.dis~spacing, data = aerial_sp_meandist)
 
-#subset the more sampled spacing arrays 
-#take the closest point, and then the closest points to 2m, 4m, and 6m 
-aer_subset_mean= aerial_sp_meandist[aerial_sp_meandist$dist.from.dis==0.00 |
-                                      aerial_sp_meandist$dist.from.dis==1.00 | 
-                                      aerial_sp_meandist$dist.from.dis==2.00 
-                                    ,]
-plot(dist.from.dis~spacing, data = aer_subset_mean)
-View(aer_subset_mean)
-
-aer_subset_mean$spacing_f = factor(aer_subset_mean$spacing, levels=c(2,1,0.5,0.33,0.2))
-aer_subset_mean$o.spacing = ordered(aer_subset_mean$spacing, levels=c(2,1,0.5,0.33,0.2))
-
-#log-transformed spore counts
-aer_subset_mean$log10mean_spores1=log10(aer_subset_mean$mean_spores+1)
-aerial_sp_meandist$log10mean_spores1=log10(aerial_sp_meandist$mean_spores+1)
-
-#### TABLE 2 ####
 aer_mean_noD = aerial_sp_meandist[aerial_sp_meandist$type!="D",]
 aer_mean_noD$spacing = as.numeric(aer_mean_noD$spacing)
 aer_mean_noD = aer_mean_noD[aer_mean_noD$spacing<2,]
-aer_mean_noD$dist.from.dis
+aer_mean_noD$log10mean_spores1 = log10(aer_mean_noD$mean_spores+1)
 
 aer_mean_noD$spacing_f = factor(aer_mean_noD$spacing, levels=c(1,0.5,0.33,0.2))
 aer_mean_noD$o.spacing = ordered(aer_mean_noD$spacing, levels=c(1,0.5,0.33,0.2))
-View(aer_mean_noD)
 
 #non-ordered factor for spacing for interpretation
+
+#### TABLE 1b ####
 aerialmeans_gam_log_wt = gam(log10mean_spores1~s(dist.from.dis, by= o.spacing, k=3) + dist.from.dis + Experiment + spacing_f, 
                              data=aer_mean_noD, method="REML", weights=n_samples)
 gam.check(aerialmeans_gam_log_wt)
 summary(aerialmeans_gam_log_wt)
 anova(aerialmeans_gam_log_wt)
 
-aerial_sp_meandist$Experiment = factor(aerial_sp_meandist$Experiment)
-aer_subset_mean$Experiment = factor(aer_subset_mean$Experiment)
 
-#### FIGURE 3 - b ####
-#Mean and standard error of the number of aerial spore traps by wind 
-
-# ordered spacing factor for plotting 
 aerialmeans_gam_log_wt = gam(log10mean_spores1~s(dist.from.dis, by= o.spacing, k=3) + dist.from.dis + Experiment + o.spacing, 
-                             data=aer_subset_mean, method="REML", weights=n_samples)
-aerial_sp_meandist$o.spacing = ordered(aerial_sp_meandist$spacing, levels=c(2,1,0.5,0.33,0.2))
+                             data=aer_mean_noD, method="REML", weights=n_samples)
+gam.check(aerialmeans_gam_log_wt)
+summary(aerialmeans_gam_log_wt)
+anova(aerialmeans_gam_log_wt)
 
-# means with errorbars - with shadow points
 plot_smooths(model = aerialmeans_gam_log_wt, series = dist.from.dis, comparison = Experiment, facet_terms = o.spacing) + 
-  geom_errorbar(data= aer_subset_mean, width=0, alpha=1,
+  geom_errorbar(data= aer_mean_noD, width=0, alpha=1,
                 aes(col=Experiment, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
-  geom_point(data= aer_subset_mean, col="black", alpha=1, size=2.5,
-              aes(x=dist.from.dis, y= log10(mean_spores+1), shape=Experiment, fill=Experiment)) + 
-  geom_errorbar(data= aerial_sp_meandist, width=0, alpha=0.6,
-                aes(col=Experiment, x=dist.from.dis, ymin= log10mean_spores1-sterrlog, ymax= log10mean_spores1+sterrlog)) +
-  geom_point(data= aerial_sp_meandist, alpha=0.6, size=2.5, col="black",
-             aes(x=dist.from.dis, y= log10(mean_spores+1), shape=Experiment, fill=Experiment)) +
-  facet_wrap(~ factor(o.spacing,labels=c("Spacing=2m","Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
-                     nrow=1) +
+  geom_point(data= aer_mean_noD, alpha=1, size=2.5, col="black",
+             aes(x=dist.from.dis, y= log10(mean_spores+1), 
+                 shape=Experiment, fill=Experiment)) +
+  facet_wrap(~ factor(o.spacing,labels=c("Spacing=1m","Spacing=0.5m","Spacing=0.33m","Spacing=0.2m")),
+             nrow=1) +
   scale_shape_manual(values=c(21,23),name="Replicate", labels=c("A", "B")) +
   scale_fill_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
   scale_color_manual(values=c("#41b6c4","#fc8d59"), name="Replicate", labels=c("A", "B")) +
@@ -427,7 +446,9 @@ plot_smooths(model = aerialmeans_gam_log_wt, series = dist.from.dis, comparison 
 fl_subset_mean2 = fl_subset_mean[,c(1:5,7)]
 
 #mean of spores on either side (grouping "type" E and H)
-aer_subset_mean2 = aer_subset_mean %>% group_by(spacing, Experiment, dist.from.dis, nsources) %>%
+
+aer_subset_mean2 = aerial_sp_meandist %>% filter(type!="D") %>%
+  group_by(spacing, Experiment, dist.from.dis, nsources) %>%
   summarize(mean_spores = mean(mean_spores), n_samples=sum(n_samples))
 
 aer_subset_mean2$Rep=aer_subset_mean2$Experiment
@@ -450,7 +471,7 @@ nsrc_gam =gam(log10(mean_spores+1) ~ s(nsources, by=o.trans_mode, k=5) + s(nsour
 summary(nsrc_gam)
 anova(nsrc_gam)
 
- #### FIGURE 5 now ####
+#### FIGURE 5 now ####
 #The rate of spore deposition on each floral or aerial target as it varies 
 #with the number of source plants at different densities. Each point represents 
 #the mean spore deposition on targets at 2m distance from the source of disease.
@@ -464,9 +485,9 @@ plot_smooths(model = nsrc_gam, series = nsources, comparison = trans_mode, facet
   facet_wrap(~factor(Rep, labels=c("Replicate A","Replicate B")), scales="free") +
   xlab("Number of source diseased plants") + 
   ylab("Log10(Mean spore count + 1)") + 
-  scale_color_manual(values=c("#4d9221","#c51b7d"), name="Transmission", labels=c("Aerial", "Floral")) +
-  scale_fill_manual(values=c("#4d9221","#c51b7d"), name="Transmission", labels=c("Aerial", "Floral"))  +
-  scale_linetype_manual(values=c("solid","dashed"), name="Transmission", labels=c("Aerial", "Floral")) +
+  scale_color_manual(values=c("#4d9221","#c51b7d"), name="Deposition onto", labels=c("Spore-Traps", "Flowers")) +
+  scale_fill_manual(values=c("#4d9221","#c51b7d"), name="Deposition onto", labels=c("Spore-Traps", "Flowers"))  +
+  scale_linetype_manual(values=c("solid","dashed"), name="Deposition onto", labels=c("Spore-Traps", "Flowers")) +
   theme_bw()
 
 
@@ -475,7 +496,7 @@ plot_smooths(model = nsrc_gam, series = nsources, comparison = trans_mode, facet
 cont_spores = read.csv("control_spore_data.csv", header=T)
 
 #now get the subset of points and take means and SE at 0, 2, 4, 6 m 
-cont_spores_meanpos = cont_spores %>% filter(dist.from.dis==0 | dist.from.dis==2 | dist.from.dis==4 | dist.from.dis==6 | spacing==4) %>%
+cont_spores_meanpos = cont_spores %>% filter(dist.from.dis==0 | dist.from.dis==2 | dist.from.dis==4 | dist.from.dis==6) %>%
   group_by(spacing, dist.from.dis) %>% summarize(mean_spores = mean(spores_mm2_new), sterrlog = std.error(log10(spores_mm2_new+1)), n_samples = length(spores_mm2_new))
 
 subs_cont_spores_meanpos=cont_spores_meanpos
@@ -519,12 +540,12 @@ Anova(cont_lm)
   
 #### Figure S6 ####
 #Floral spore deposition in the absence of diseased source plants. 
-cont_gam1 = gam(log10(mean_spores+1)~ s(dist.from.dis, by=o.spacing, k=3)  + o.spacing, 
-                data=subs_cont_spores_meanpos, weights = n_samples, method="REML")
+cont_spores_meanposall = cont_spores %>% filter(dist.from.dis==0 | dist.from.dis==2 | dist.from.dis==4 | dist.from.dis==6 | spacing==4) %>%
+  group_by(spacing, dist.from.dis) %>% summarize(mean_spores = mean(spores_mm2_new), sterrlog = std.error(log10(spores_mm2_new+1)), n_samples = length(spores_mm2_new))
 
-ggplot(aes(y=log10(mean_spores+1), x=dist.from.dis), data=cont_spores_meanpos) + 
+ggplot(aes(y=log10(mean_spores+1), x=dist.from.dis), data=cont_spores_meanposall) + 
   facet_wrap(~factor(spacing, levels=c(4, 1, 0.5, 0.33),
-                     labels=c("Spacing 4m+","Spacing 1m","Spacing 0.5m","Spacing 0.33m")), nrow=1) +
+                     labels=c("Spacing=4m+","Spacing=1m","Spacing=0.5m","Spacing=0.33m")), nrow=1) +
   geom_errorbar(col="gray20", aes(x=dist.from.dis, ymin= log10(mean_spores+1)-sterrlog, ymax= log10(mean_spores+1)+sterrlog), width=0) + 
   geom_point(col="gray20", fill="gray", pch=22, size=2.5) + 
   theme_bw() + xlab("Distance (m)") + ylab("Log10(Mean spore count+1)") +
@@ -538,7 +559,7 @@ fandata = read.csv("fan_data.csv", header=T)
 
 fandata_means = fandata %>% group_by(min_dist_dis, Experiment_replicate) %>% summarize(mean_count= mean(spores_mm2_new), n_samples=length(spores_mm2_new))
 
-fan_gam1 = gam(log10(spores_mm2_new+1)~ s(min_dist_dis, k=9), 
+fan_gam1 = lm(log10(spores_mm2_new+1)~ s(min_dist_dis, k=9), 
                 data=fandata, method="REML")
 summary(fan_gam1)
 gam.check(fan_gam1)

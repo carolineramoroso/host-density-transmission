@@ -368,11 +368,10 @@ aerial7 = read.csv("rep 7 strips - clumps.csv", header=T)
 aerial8$spores = aerial8$clus1 + 10*aerial8$clus10 + 100*aerial8$clus100 + 1000*aerial8$clus1000
 aerial7$spores = aerial7$clus1 + 10*aerial7$clus10 + 100*aerial7$clus100 + 1000*aerial7$clus1000
 
-aerial8_sub = aerial8[,c('plot', 'spacing', 'xx', 'type', 'spores')]
+aerial8_sub = aerial8[,c('plot', 'spacing', 'xx', 'type','clus1','clus10','clus100','clus1000','spores')]
 aerial8_sub$Experiment = c(8)
 
-aerial7_sub = aerial7[,c('plot', 'spacing', 'xx', 'type', 'spores')]
-colnames(aerial7_sub) = c('plot', 'spacing', 'xx', 'type', 'spores')
+aerial7_sub = aerial7[,c('plot', 'spacing', 'xx', 'type','clus1','clus10','clus100','clus1000','spores')]
 aerial7_sub$Experiment = c(7)
 unique(aerial7_sub$spacing)
 
@@ -392,7 +391,7 @@ aerial$spores_per_source = aerial$spores / aerial$nsources
 min(aerial$spores_per_source[aerial$spores_per_source != 0]) 
 
 aerial$Experiment = factor(aerial$Experiment, levels=c(7,8), labels=c("A","B"))
-#write.csv(aerial, "aerial_spore_data_4.6.22.csv")
+write.csv(aerial, "aerial_spore_data_4.6.22.csv")
 
 #in host density data folder
 #aerial = read.csv("aerial_spore_data.csv")
@@ -523,35 +522,31 @@ plot_smooths(model = aerialmeans_gam_log_wt, series = dist.from.dis, comparison 
 #new analyses 4 april
 repA_clumps = aerial7 %>% group_by(type) %>% 
   summarize(Clumps10 = sum(clus1,clus10), Clumps100 = sum(clus100), Clumps1000 = sum(clus1000))
-colnames(repA_clumps) = NULL
 
 A.D = repA_clumps[1,2:4]
 A.E = repA_clumps[2,2:4]
 A.H = repA_clumps[3,2:4]
-nums = paste(c(A.D,A.E,A.H))
+A.nonD = A.E + A.H
+nums = paste(c(A.D,A.nonD))
 nums= as.numeric(nums)
-dat.A= matrix(nums, nrow=3, ncol=3)
-
-str(dat)
-dat = matrix(c(30,11,3,13,1,0), nrow=3, ncol=2)
-
-chisq.test(x=dat)
+dat.A= matrix(nums, nrow=3, ncol=2)
+dat.A
+chisq.test(x=dat.A)
 
 
 repB_clumps = aerial8 %>% group_by(type) %>% 
   summarize(Clumps10 = sum(clus1,clus10), Clumps100 = sum(clus100), Clumps1000 = sum(clus1000))
-colnames(repB_clumps) = NULL
 
 B.D = repB_clumps[1,2:4]
 B.E = repB_clumps[2,2:4]
 B.H = repB_clumps[3,2:4]
-nums = paste(c(B.D,B.E,B.H))
+B.noD = B.E + B.H 
+nums = paste(c(B.D,B.noD))
 nums= as.numeric(nums)
-dat.B= matrix(nums, nrow=3, ncol=3)
+dat.B= matrix(nums, nrow=3, ncol=2)
+dat.B
+chisq.test(dat.B)
 
-dat.both = dat.A + dat.B
-
-chisq.test(dat.both) # combined? 
 
 aerialA = subset(aerial, type!="D" & Experiment=="A")
 aerialB = subset(aerial, type!="D" & Experiment=="B")
@@ -559,7 +554,7 @@ aerialB = subset(aerial, type!="D" & Experiment=="B")
 plot(log10(spores+1)~xx, data=aerial)
 
 
-#Table S8
+#Table S9
 anova(lm(log10(spores+1)~ factor(spacing) + factor(dist.from.center) + type,  
          data=aerialA))
 
