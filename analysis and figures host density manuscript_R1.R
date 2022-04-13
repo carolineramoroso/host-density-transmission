@@ -518,22 +518,11 @@ cont_spores$spacing_f = factor(cont_spores$spacing, levels=c(4,1,0.5,0.33))
 cont_spores$o.spacing = ordered(cont_spores$spacing_f, levels=c(4,1,0.5,0.33))
 
 #just the means at a subset of locations (0, 2, 4, 6 m; or just the middle location for spacing=4m)
-#### TABLE S9 ####
-#Generalized additive model of mean spores deposited at a subset of 
-#locations in the absence of diseased source plants 
-#
-cont_gam1 = gam(log10(mean_spores+1)~ s(dist.from.dis, by=o.spacing, k=3)  + o.spacing, 
-                data=subs_cont_spores_meanpos, weights = n_samples, method="REML")
-summary(cont_gam1)
-gam.check(cont_gam1)
-anova(cont_gam1)
-#drop the interaction 
-#leave distance out, and just run an anova with distance and spacing#
-cont_gam2 = gam(log10(mean_spores+1)~ spacing, 
-                data=subs_cont_spores_meanpos, weights = n_samples, method="REML")
-summary(cont_gam2)
+#### TABLE S12 ####
+#lm of mean spores deposited at 
+#specific positions in the absence of diseased source plants 
 
-cont_lm = lm(log10(mean_spores+1)~ spacing, 
+cont_lm = lm(log10(mean_spores+1)~ spacing + dist.from.dis, 
    data=subs_cont_spores_meanpos)
 summary(cont_lm)
 Anova(cont_lm)
