@@ -10,3 +10,6 @@ The analyses depend on data files that are stored in the internal folder 'host d
 
 Corresponding author for this manuscript is Janis Antonovics, ja8n@virginia.edu, though specific 
 questions about the analyses may be better directed to Caroline Amoroso, cra2z@virginia.edu.
+
+
+<a href="https://zenodo.org/badge/latestdoi/386741117"><img src="https://zenodo.org/badge/386741117.svg" alt="DOI"></a>
